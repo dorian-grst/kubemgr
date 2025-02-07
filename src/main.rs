@@ -2,10 +2,10 @@ mod cli;
 mod merger;
 mod utils;
 
-use std::process;
 use clap::Parser;
 use cli::Cli;
 use merger::merge_kubeconfigs;
+use std::process;
 
 fn main() {
     let cli = Cli::parse();

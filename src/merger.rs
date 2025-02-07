@@ -1,10 +1,9 @@
+use crate::utils::MergeOptions;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
-use dirs;
-use crate::utils::MergeOptions;
 
 fn get_current_kubeconfig_path() -> Option<String> {
     dirs::home_dir().map(|home| home.join(".kube/config").to_string_lossy().to_string())
@@ -59,7 +58,11 @@ pub fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> {
     let merged_file = options.output_path.unwrap_or_else(|| {
         dirs::home_dir()
             // Use ~/.kube/kubeconfig-merged.yaml as the default output path
-            .map(|home| home.join(".kube/config.merged").to_string_lossy().to_string())
+            .map(|home| {
+                home.join(".kube/config.merged")
+                    .to_string_lossy()
+                    .to_string()
+            })
             // Fallback to /tmp/kubeconfig-merged.yaml if home directory is not available
             .unwrap_or_else(|| "/tmp/kubeconfig-merged.yaml".to_string())
     });
@@ -68,11 +71,16 @@ pub fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> {
 
     // Check if the file already exists
     if merged_file_path.exists() {
-        print!("⚠ The file '{}' already exists. Do you want to overwrite it? (Y/n): ", merged_file);
+        print!(
+            "⚠ The file '{}' already exists. Do you want to overwrite it? (Y/n): ",
+            merged_file
+        );
         io::stdout().flush().ok();
 
         let mut confirmation = String::new();
-        io::stdin().read_line(&mut confirmation).map_err(|_| "✕ Failed to read input")?;
+        io::stdin()
+            .read_line(&mut confirmation)
+            .map_err(|_| "✕ Failed to read input")?;
 
         let confirmation = confirmation.trim().to_lowercase();
 

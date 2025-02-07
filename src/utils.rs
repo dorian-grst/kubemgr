@@ -5,4 +5,3 @@ pub struct MergeOptions {
     pub dry_run: bool,
     pub output_path: Option<String>,
 }
-

@@ -1,0 +1,21 @@
+name: 🦀 Push to main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+
+  build:
+    needs: lint
+    name: Build
+    uses: ./.github/workflows/build.yml
+
+  release:
+    needs: build
+    name: Release
+    uses: ./.github/workflows/release_cargo.yml

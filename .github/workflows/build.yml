@@ -1,0 +1,23 @@
+name: 🦀 Build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build Rust project
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout project
+      - uses: dtolnay/rust-toolchain@stable
+        name: Install Rust toolchain
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+        name: Use cached dependencies
+      - name: Build the project
+        run: cargo build --verbose
