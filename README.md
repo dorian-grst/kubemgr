@@ -2,6 +2,10 @@
 
 The fastest way to merge Kubernetes configuration files 🏎.
 
+### Prerequisites
+
+- Kubectl installed
+
 ### Installation
 
 ```shell
