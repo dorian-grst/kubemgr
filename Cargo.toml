@@ -2,6 +2,10 @@
 name = "kubemgr"
 version = "0.1.0"
 edition = "2021"
+authors = ["Dorian Grasset"]
+keywords = ["kubernetes", "configuration", "merger"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dorian-grst/kubemgr"
 
 [dependencies]
 clap = { version = "4.5.28", features = ["derive"] }
