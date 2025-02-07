@@ -18,4 +18,5 @@ jobs:
   release:
     needs: build
     name: Release
+    secrets: inherit
     uses: ./.github/workflows/release_cargo.yml
