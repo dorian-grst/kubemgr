@@ -1,0 +1,38 @@
+# Documentation Template
+name: 📚 Documentation
+description: Report an issue or suggest an improvement for the documentation
+labels: ["documentation"]
+body:
+  - type: dropdown
+    attributes:
+      label: Type of Change
+      options:
+        - Error Correction
+        - Content Addition
+        - Clarification Needed
+        - Update Required
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Page Link
+      description: URL of the affected page (if applicable)
+      placeholder: "https://docs.example.com/page"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: Describe the issue or desired improvement
+      placeholder: "The current documentation lacks examples for..."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Proposed Solution
+      description: If you have a specific suggestion, describe it here
+    validations:
+      required: false
