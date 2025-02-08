@@ -7,7 +7,8 @@ use cli::Cli;
 use merger::merge_kubeconfigs;
 use std::process;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     let options = utils::MergeOptions {
         files: cli.files,
@@ -15,8 +16,8 @@ fn main() {
         dry_run: cli.dry_run,
         output_path: cli.path,
     };
-    // Call the merge_kubeconfigs function with the provided files and other options
-    match merge_kubeconfigs(options) {
+
+    match merge_kubeconfigs(options).await {
         Ok(result) => {
             if cli.dry_run {
                 println!("{}", result);

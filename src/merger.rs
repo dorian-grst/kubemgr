@@ -1,39 +1,92 @@
 use crate::utils::MergeOptions;
-use std::env;
+use anyhow::{Context, Result};
+use kube::config::Kubeconfig;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
-use std::process::Command;
 
 fn get_current_kubeconfig_path() -> Option<String> {
     dirs::home_dir().map(|home| home.join(".kube/config").to_string_lossy().to_string())
 }
 
-// Function to run `kubectl config view --flatten`
-fn run_kubectl_view() -> Result<String, String> {
-    let output = Command::new("kubectl")
-        .arg("config")
-        .arg("view")
-        .arg("--flatten")
-        .output()
-        .map_err(|e| format!("✕ Failed to execute kubectl: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("✕ kubectl returned an error:\n{}", stderr));
+/// Validates the input files and options
+fn validate_input(files: &[String], include_current: bool) -> Result<(), String> {
+    // Check if we have enough files
+    if files.len() < 2 && !include_current {
+        return Err("✕ At least two kubeconfig files must be provided, or use --current to merge with ~/.kube/config".into());
     }
 
-    String::from_utf8(output.stdout).map_err(|e| format!("✕ Invalid UTF-8 output: {}", e))
+    // Verify all files exist
+    for file in files {
+        if !PathBuf::from(file).exists() {
+            return Err(format!("✕ File does not exist: {}", file));
+        }
+    }
+
+    Ok(())
 }
 
-// Core function to merge kubeconfigs
-pub fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> {
-    let mut files = options.files.clone();
+/// Prompts for user confirmation if the output file exists
+fn confirm_overwrite(path: &str) -> Result<bool, String> {
+    print!(
+        "⚠ The file '{}' already exists. Do you want to overwrite it? (Y/n): ",
+        path
+    );
+    io::stdout().flush().ok();
 
-    // Ensure at least one file is provided
-    if files.is_empty() && !options.include_current {
-        return Err("✕ At least two kubeconfig files must be provided, or use --current.".into());
+    let mut confirmation = String::new();
+    io::stdin()
+        .read_line(&mut confirmation)
+        .map_err(|_| "✕ Failed to read input")?;
+
+    let confirmation = confirmation.trim().to_lowercase();
+    Ok(confirmation.is_empty() || confirmation == "y")
+}
+
+/// Check output path and ask for confirmation if needed
+fn validate_output_path(path: &str) -> Result<(), String> {
+    let output_path = PathBuf::from(path);
+    if output_path.exists() && !confirm_overwrite(path)? {
+        return Err("✕ Operation cancelled by the user.".into());
     }
+    Ok(())
+}
+
+/// Load and merge kubeconfig files
+async fn load_and_merge_kubeconfigs(paths: &[String]) -> Result<Kubeconfig> {
+    // Load and merge all kubeconfig files
+    let mut merged_config = None;
+
+    for path in paths {
+        let config_str = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read kubeconfig file: {}", path))?;
+
+        let config: Kubeconfig = serde_yaml::from_str(&config_str)
+            .with_context(|| format!("Failed to parse kubeconfig file: {}", path))?;
+
+        match merged_config {
+            None => merged_config = Some(config),
+            Some(ref mut merged) => {
+                // Merge clusters
+                merged.clusters.extend(config.clusters);
+                // Merge auth-infos (users)
+                merged.auth_infos.extend(config.auth_infos);
+                // Merge contexts
+                merged.contexts.extend(config.contexts);
+                // Keep the current context from the first file if not explicitly set
+                if merged.current_context.is_none() {
+                    merged.current_context = config.current_context;
+                }
+            }
+        }
+    }
+
+    merged_config.ok_or_else(|| anyhow::anyhow!("No valid kubeconfig files found"))
+}
+
+/// Core function to merge kubeconfigs
+pub async fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> {
+    let mut files = options.files.clone();
 
     // Add ~/.kube/config if --current is enabled
     if options.include_current {
@@ -44,55 +97,36 @@ pub fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> {
         }
     }
 
-    let kubeconfig_paths = files.join(":");
-    env::set_var("KUBECONFIG", &kubeconfig_paths);
+    // Validate input files
+    validate_input(&files, options.include_current)?;
 
-    let merged_config = run_kubectl_view()?;
+    // Load and merge kubeconfigs
+    let merged_config = load_and_merge_kubeconfigs(&files)
+        .await
+        .map_err(|e| format!("✕ Failed to merge kubeconfigs: {}", e))?;
 
-    // If --view flag is set, return the merged config as a string
+    // Convert merged config to YAML
+    let merged_yaml = serde_yaml::to_string(&merged_config)
+        .map_err(|e| format!("✕ Failed to serialize merged config: {}", e))?;
+
+    // If --dry-run flag is set, return the merged config as a string
     if options.dry_run {
-        return Ok(merged_config);
+        return Ok(merged_yaml);
     }
 
     // Determine output file path
     let merged_file = options.output_path.unwrap_or_else(|| {
         dirs::home_dir()
-            // Use ~/.kube/kubeconfig-merged.yaml as the default output path
-            .map(|home| {
-                home.join(".kube/config.merged")
-                    .to_string_lossy()
-                    .to_string()
-            })
-            // Fallback to /tmp/kubeconfig-merged.yaml if home directory is not available
+            .map(|home| home.join(".kube/config.merged").to_string_lossy().to_string())
             .unwrap_or_else(|| "/tmp/kubeconfig-merged.yaml".to_string())
     });
 
-    let merged_file_path = PathBuf::from(&merged_file);
-
-    // Check if the file already exists
-    if merged_file_path.exists() {
-        print!(
-            "⚠ The file '{}' already exists. Do you want to overwrite it? (Y/n): ",
-            merged_file
-        );
-        io::stdout().flush().ok();
-
-        let mut confirmation = String::new();
-        io::stdin()
-            .read_line(&mut confirmation)
-            .map_err(|_| "✕ Failed to read input")?;
-
-        let confirmation = confirmation.trim().to_lowercase();
-
-        if !confirmation.is_empty() && confirmation != "y" {
-            return Err("✕ Operation cancelled by the user.".into());
-        }
-    }
+    // Validate output path and get confirmation if needed
+    validate_output_path(&merged_file)?;
 
     // Write the merged config to the chosen file
-    fs::write(&merged_file, &merged_config)
+    fs::write(&merged_file, merged_yaml)
         .map_err(|e| format!("✕ Failed to write the merged file: {}", e))?;
 
     Ok(merged_file)
-    //dry-run
 }
