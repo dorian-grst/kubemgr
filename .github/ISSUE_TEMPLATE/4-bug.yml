@@ -25,23 +25,17 @@ body:
         2. Click on '....'
         3. Scroll down to '....'
         4. See error
-    validations:
-      required: true
 
   - type: textarea
     attributes:
       label: Expected Behavior
       description: A clear description of what you expected to happen
-    validations:
-      required: true
 
   - type: input
     attributes:
       label: Version
       description: What version are you using?
       placeholder: "v1.0.0"
-    validations:
-      required: true
 
   - type: textarea
     attributes:
@@ -55,5 +49,3 @@ body:
         - OS:
         - Browser:
         - Version:
-    validations:
-      required: true

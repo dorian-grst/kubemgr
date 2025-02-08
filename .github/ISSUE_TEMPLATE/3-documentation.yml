@@ -19,8 +19,6 @@ body:
       label: Page Link
       description: URL of the affected page (if applicable)
       placeholder: "https://docs.example.com/page"
-    validations:
-      required: false
 
   - type: textarea
     attributes:
