@@ -2,6 +2,24 @@
 
 The fastest way to merge Kubernetes configuration files 🏎.
 
+### Pre-requisites
+
+- **Rust & Cargo**: Ensure you have Rust and Cargo installed. You can install them using [rustup](https://rustup.rs/).
+
+- **Rust version**: This project requires Rust **1.65 or later**. You can check your Rust version with:
+
+  ```shell
+  rustc --version
+  ```
+
+  If your version is outdated, update Rust with:
+
+  ```shell
+  rustup update
+  ```
+
+- **Kubernetes cluster access**: Ensure you have a valid Kubernetes configuration (`~/.kube/config`) if you plan to interact with clusters.
+
 ### Installation
 
 ```shell
