@@ -1,6 +1,6 @@
 [package]
 name = "kubemgr"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Dorian Grasset"]
 keywords = ["kubernetes", "configuration", "merger"]
@@ -9,5 +9,11 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/dorian-grst/kubemgr"
 
 [dependencies]
-clap = { version = "4.5.28", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
+kube = { version = "0.87.1", default-features = false, features = ["config"] }
+k8s-openapi = { version = "0.20.0", features = ["v1_27"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+anyhow = "1.0"
 dirs = "6.0.0"
+tokio = { version = "1.0", features = ["full"] }
