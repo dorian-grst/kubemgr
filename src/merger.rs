@@ -117,7 +117,11 @@ pub async fn merge_kubeconfigs(options: MergeOptions) -> Result<String, String> 
     // Determine output file path
     let merged_file = options.output_path.unwrap_or_else(|| {
         dirs::home_dir()
-            .map(|home| home.join(".kube/config.merged").to_string_lossy().to_string())
+            .map(|home| {
+                home.join(".kube/config.merged")
+                    .to_string_lossy()
+                    .to_string()
+            })
             .unwrap_or_else(|| "/tmp/kubeconfig-merged.yaml".to_string())
     });
 
