@@ -1,33 +1,46 @@
-mod cli;
-mod merger;
 mod utils;
+mod interfaces;
 
 use clap::Parser;
-use cli::Cli;
-use merger::merge_kubeconfigs;
-use std::process;
+use std::{fs};
+use interfaces::cli::{CliOptions, Cli};
+use utils::merger::merge_kubeconfig_contents;
+use utils::saver::validate_output_path;
+use interfaces::cli::{validate_input, load_kubeconfig_files};
 
-#[tokio::main]
-async fn main() {
+#[cfg(feature = "cli")]
+fn main() {
     let cli = Cli::parse();
-    let options = utils::MergeOptions {
+    let options = CliOptions {
         files: cli.files,
-        include_current: cli.current,
-        dry_run: cli.dry_run,
-        output_path: cli.path,
+        output_path: cli.output,
     };
 
-    match merge_kubeconfigs(options).await {
-        Ok(result) => {
-            if cli.dry_run {
-                println!("{}", result);
-            } else {
-                println!("✓ Merged kubeconfig saved to: {}", result);
-            }
-        }
-        Err(e) => {
-            eprintln!("{}", e);
-            process::exit(1);
-        }
+    merge_kubeconfigs(options).expect("TODO: panic message");
+}
+
+#[cfg(feature = "cli")]
+pub fn merge_kubeconfigs(options: CliOptions) -> Result<String, Box<dyn std::error::Error>> {
+    let files = options.files.clone();
+
+    validate_input(&files)?;
+
+    let contents = load_kubeconfig_files(&files)?;
+
+    let merged_yaml = merge_kubeconfig_contents(&contents)
+        .map_err(|e| format!("✕ Failed to merge kubeconfigs: {}", e))?;
+
+    // Dans la fonction merge_kubeconfigs
+    if let Some(output_path) = options.output_path {
+        validate_output_path(&output_path)?;
+
+        fs::write(&output_path, &merged_yaml)
+            .map_err(|e| format!("✕ Failed to write the merged file: {}", e))?;
+
+        println!("✓ Merged kubeconfig saved to: {}", output_path);
+        Ok(output_path)
+    } else {
+        println!("{}", merged_yaml);
+        Ok("Merged kubeconfig displayed in terminal".to_string())
     }
 }

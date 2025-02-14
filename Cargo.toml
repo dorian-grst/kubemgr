@@ -8,6 +8,17 @@ description = "The fastest way to merge Kubernetes configuration files 🏎."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dorian-grst/kubemgr"
 
+[[bin]]
+name = "kubemgr"
+path = "src/main.rs"
+
+[[bin]]
+name = "kubemgrwasm"
+path = "src/main.rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
 kube = { version = "0.87.1", default-features = false, features = ["config"] }
@@ -16,4 +27,16 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 anyhow = "1.0"
 dirs = "6.0.0"
-tokio = { version = "1.0", features = ["full"] }
+wasm-bindgen = "0.2.100"
+
+[features]
+default = ["cli"]
+cli = []
+wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+[patch.crates-io]
+home = { path = "./home-override" }
