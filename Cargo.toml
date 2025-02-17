@@ -11,32 +11,27 @@ repository = "https://github.com/dorian-grst/kubemgr"
 [[bin]]
 name = "kubemgr"
 path = "src/main.rs"
-
-[[bin]]
-name = "kubemgrwasm"
-path = "src/main.rs"
+required-features = ["cli"]
 
 [lib]
+name = "kubemgrwasm"
+path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"], optional = true }
 kube = { version = "0.87.1", default-features = false, features = ["config"] }
 k8s-openapi = { version = "0.20.0", features = ["v1_27"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-anyhow = "1.0"
-dirs = "6.0.0"
-wasm-bindgen = "0.2.100"
+dirs = { version = "6.0.0", optional = true }
+wasm-bindgen = { version = "0.2.100", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 
 [features]
 default = ["cli"]
-cli = []
-wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2", optional = true }
-console_error_panic_hook = { version = "0.1.7", optional = true }
+cli = ["clap", "dirs"]
+wasm = ["wasm-bindgen", "console_error_panic_hook"]
 
 [patch.crates-io]
 home = { path = "./home-override" }

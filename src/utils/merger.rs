@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
 use kube::config::Kubeconfig;
+use crate::utils::errors::KubeMergeError;
 
 #[derive(Debug)]
 pub struct KubeconfigContent {
@@ -7,27 +7,23 @@ pub struct KubeconfigContent {
 }
 
 /// Core merging logic that works with raw YAML content
-pub fn merge_kubeconfig_contents(configs: &[KubeconfigContent]) -> Result<String> {
+pub fn merge_kubeconfig_contents(configs: &[KubeconfigContent]) -> Result<String, KubeMergeError> {
     if configs.is_empty() {
-        return Err(anyhow::anyhow!("No kubeconfig content provided"));
+        return Err(KubeMergeError::NoContent("No kubeconfig content provided".to_string()));
     }
 
-    let mut merged_config : Option<Kubeconfig> = None;
+    let mut merged_config: Option<Kubeconfig> = None;
 
     for config in configs {
-        let current_config: Kubeconfig =
-            serde_yaml::from_str(&config.content).context("Failed to parse kubeconfig content")?;
+        let current_config: Kubeconfig = serde_yaml::from_str(&config.content)
+            .map_err(|e| KubeMergeError::ParseError(e.to_string()))?;
 
         match merged_config {
             None => merged_config = Some(current_config),
             Some(ref mut merged) => {
-                // Merge clusters
                 merged.clusters.extend(current_config.clusters);
-                // Merge auth-infos (users)
                 merged.auth_infos.extend(current_config.auth_infos);
-                // Merge contexts
                 merged.contexts.extend(current_config.contexts);
-                // Keep the current context from the first file if not explicitly set
                 if merged.current_context.is_none() {
                     merged.current_context = current_config.current_context;
                 }
@@ -35,7 +31,9 @@ pub fn merge_kubeconfig_contents(configs: &[KubeconfigContent]) -> Result<String
         }
     }
 
-    let merged =
-        merged_config.ok_or_else(|| anyhow::anyhow!("No valid kubeconfig content found"))?;
-    serde_yaml::to_string(&merged).context("Failed to serialize merged config")
+    let merged = merged_config
+        .ok_or_else(|| KubeMergeError::NoContent("No valid kubeconfig content found".to_string()))?;
+
+    serde_yaml::to_string(&merged)
+        .map_err(|e| KubeMergeError::ParseError(format!("Failed to serialize merged config: {}", e)))
 }

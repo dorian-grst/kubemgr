@@ -1,28 +1,30 @@
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
+use crate::utils::errors::KubeMergeError;
 
-fn confirm_overwrite(path: &str) -> Result<bool, String> {
+fn confirm_overwrite(path: &str) -> Result<bool, KubeMergeError> {
     print!(
         "⚠ The file '{}' already exists. Do you want to overwrite it? (Y/n): ",
         path
     );
-    io::stdout().flush().ok();
+    io::stdout()
+        .flush()
+        .map_err(|e| KubeMergeError::WriteError(e.to_string()))?;
 
     let mut confirmation = String::new();
     io::stdin()
         .read_line(&mut confirmation)
-        .map_err(|_| "✕ Failed to read input")?;
+        .map_err(|e| KubeMergeError::WriteError(e.to_string()))?;
 
     let confirmation = confirmation.trim().to_lowercase();
     Ok(confirmation.is_empty() || confirmation == "y")
 }
 
-pub fn validate_output_path(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn validate_output_path(path: &str) -> Result<(), KubeMergeError> {
     let output_path = PathBuf::from(path);
     if output_path.exists() && !confirm_overwrite(path)? {
-        // TODO : Create a custom error type for this
-        return Err("✕ Operation cancelled by the user.".into());
+        return Err(KubeMergeError::UserCancelled("Operation cancelled by user".to_string()));
     }
     Ok(())
 }

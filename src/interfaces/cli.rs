@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use clap::Parser;
 use crate::utils::merger::KubeconfigContent;
+use crate::utils::errors::KubeMergeError;
 
 #[derive(Debug)]
 pub struct CliOptions {
@@ -30,14 +31,19 @@ pub struct Cli {
 }
 
 /// Validates the input files and options
-pub fn validate_input(files: &[String]) -> Result<(), String> {
+pub fn validate_input(files: &[String]) -> Result<(), KubeMergeError> {
     if files.len() < 2 {
-        return Err("✕ At least two kubeconfig files must be provided".into());
+        return Err(KubeMergeError::InsufficientFiles(
+            "At least two kubeconfig files must be provided".to_string()
+        ));
     }
 
     for file in files {
         if !PathBuf::from(file).exists() {
-            return Err(format!("✕ File does not exist: {}", file));
+            return Err(KubeMergeError::FileNotFound(format!(
+                "File '{}' not found",
+                file
+            )));
         }
     }
 
@@ -45,12 +51,14 @@ pub fn validate_input(files: &[String]) -> Result<(), String> {
 }
 
 /// Load kubeconfig files and convert them to KubeconfigContent
-pub fn load_kubeconfig_files(paths: &[String]) -> Result<Vec<KubeconfigContent>, String> {
+pub fn load_kubeconfig_files(paths: &[String]) -> Result<Vec<KubeconfigContent>, KubeMergeError> {
     let mut contents = Vec::new();
 
     for path in paths {
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("✕ Failed to read kubeconfig file {}: {}", path, e))?;
+        let content = fs::read_to_string(path).map_err(|error| KubeMergeError::FileReadError {
+            file: path.clone(),
+            error,
+        })?;
 
         contents.push(KubeconfigContent { content });
     }
