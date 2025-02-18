@@ -4,7 +4,7 @@ use std::fmt;
 pub enum KubeMergeError {
     NoContent(String),
     FileNotFound(String),
-    FileReadError { file: String, error: std::io::Error },
+    FileReadError(String),
     ParseError(String),
     WriteError(String),
     UserCancelled(String),
@@ -20,5 +20,3 @@ impl fmt::Display for KubeMergeError {
         }
     }
 }
-
-impl std::error::Error for KubeMergeError {}

@@ -1,13 +1,13 @@
-mod utils;
 mod interfaces;
+mod utils;
 
+use crate::utils::errors::KubeMergeError;
 use clap::Parser;
-use std::{fs};
-use interfaces::cli::{CliOptions, Cli};
+use interfaces::cli::{load_kubeconfig_files, validate_input};
+use interfaces::cli::{Cli, CliOptions};
+use std::fs;
 use utils::merger::merge_kubeconfig_contents;
 use utils::saver::validate_output_path;
-use interfaces::cli::{validate_input, load_kubeconfig_files};
-use crate::utils::errors::KubeMergeError;
 
 #[cfg(feature = "cli")]
 fn main() {
@@ -17,9 +17,17 @@ fn main() {
         output_path: cli.output,
     };
 
-    if let Err(e) = merge_kubeconfigs(options) {
-        eprintln!("Error: {:?}", e);
-        std::process::exit(1);
+    match merge_kubeconfigs(options) {
+        Ok(_) => std::process::exit(0),
+        Err(e) => match e {
+            KubeMergeError::InsufficientFiles(msg)
+            | KubeMergeError::FileNotFound(msg)
+            | KubeMergeError::ParseError(msg)
+            | KubeMergeError::WriteError(msg)
+            | KubeMergeError::NoContent(msg)
+            | KubeMergeError::UserCancelled(msg) => eprintln!("Error: {}", msg),
+            _ => eprintln!("An unknown error occurred"),
+        },
     }
 }
 
@@ -36,8 +44,9 @@ pub fn merge_kubeconfigs(options: CliOptions) -> Result<String, KubeMergeError> 
     if let Some(output_path) = options.output_path {
         validate_output_path(&output_path)?;
 
-        fs::write(&output_path, &merged_yaml)
-            .map_err(|e| KubeMergeError::WriteError(format!("Failed to write the merged file: {}", e)))?;
+        fs::write(&output_path, &merged_yaml).map_err(|e| {
+            KubeMergeError::WriteError(format!("Failed to write the merged file: {}", e))
+        })?;
 
         println!("✓ Merged kubeconfig saved to: {}", output_path);
         Ok(output_path)

@@ -1,5 +1,5 @@
-use kube::config::Kubeconfig;
 use crate::utils::errors::KubeMergeError;
+use kube::config::Kubeconfig;
 
 #[derive(Debug)]
 pub struct KubeconfigContent {
@@ -9,7 +9,9 @@ pub struct KubeconfigContent {
 /// Core merging logic that works with raw YAML content
 pub fn merge_kubeconfig_contents(configs: &[KubeconfigContent]) -> Result<String, KubeMergeError> {
     if configs.is_empty() {
-        return Err(KubeMergeError::NoContent("No kubeconfig content provided".to_string()));
+        return Err(KubeMergeError::NoContent(
+            "No kubeconfig content provided".to_string(),
+        ));
     }
 
     let mut merged_config: Option<Kubeconfig> = None;
@@ -31,9 +33,11 @@ pub fn merge_kubeconfig_contents(configs: &[KubeconfigContent]) -> Result<String
         }
     }
 
-    let merged = merged_config
-        .ok_or_else(|| KubeMergeError::NoContent("No valid kubeconfig content found".to_string()))?;
+    let merged = merged_config.ok_or_else(|| {
+        KubeMergeError::NoContent("No valid kubeconfig content found".to_string())
+    })?;
 
-    serde_yaml::to_string(&merged)
-        .map_err(|e| KubeMergeError::ParseError(format!("Failed to serialize merged config: {}", e)))
+    serde_yaml::to_string(&merged).map_err(|e| {
+        KubeMergeError::ParseError(format!("Failed to serialize merged config: {}", e))
+    })
 }

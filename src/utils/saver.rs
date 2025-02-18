@@ -1,7 +1,7 @@
+use crate::utils::errors::KubeMergeError;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
-use crate::utils::errors::KubeMergeError;
 
 fn confirm_overwrite(path: &str) -> Result<bool, KubeMergeError> {
     print!(
@@ -24,7 +24,9 @@ fn confirm_overwrite(path: &str) -> Result<bool, KubeMergeError> {
 pub fn validate_output_path(path: &str) -> Result<(), KubeMergeError> {
     let output_path = PathBuf::from(path);
     if output_path.exists() && !confirm_overwrite(path)? {
-        return Err(KubeMergeError::UserCancelled("Operation cancelled by user".to_string()));
+        return Err(KubeMergeError::UserCancelled(
+            "Operation cancelled by user".to_string(),
+        ));
     }
     Ok(())
 }

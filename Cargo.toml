@@ -33,5 +33,6 @@ default = ["cli"]
 cli = ["clap", "dirs"]
 wasm = ["wasm-bindgen", "console_error_panic_hook"]
 
+# See kubemgr/home-override/README.md
 [patch.crates-io]
 home = { path = "./home-override" }
