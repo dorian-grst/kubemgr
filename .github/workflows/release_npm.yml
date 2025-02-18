@@ -1,0 +1,31 @@
+name: 🦀 Release the npm package
+
+on:
+  workflow_call:
+
+jobs:
+  release-npm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: 'latest'
+      - name: Build WASM package
+        run: wasm-pack build --target web --features wasm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Publish to NPM
+        continue-on-error: true
+        run: wasm-pack publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
