@@ -15,8 +15,14 @@ jobs:
     name: Build
     uses: ./.github/workflows/build.yml
 
-  release:
+  release-cargo:
     needs: build
-    name: Release
+    name: Release Cargo
     secrets: inherit
     uses: ./.github/workflows/release_cargo.yml
+
+  release-npm:
+    needs: build
+    name: Release NPM
+    secrets: inherit
+    uses: ./.github/workflows/release_npm.yml
