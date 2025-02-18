@@ -2,6 +2,8 @@
 
 The fastest way to merge Kubernetes configuration files 🏎.
 
+Online version available at [kubemgr.com](https://kubemgr.com).
+
 ### Pre-requisites
 
 - **Rust & Cargo**: Ensure you have Rust and Cargo installed. You can install them using [rustup](https://rustup.rs/).
@@ -32,13 +34,11 @@ cargo install kubemgr
 Usage: kubemgr [OPTIONS] <FILES>...
 
 Arguments:
-  <FILES>...  Kubeconfig files to merge
+  <FILES>...  Kubernetes configuration files to merge
 
 Options:
-  -c, --current      Include the current kubeconfig file at ~/.kube/config
-  -d, --dry-run      Print the merged kubeconfig to stdout
-  -p, --path <FILE>  Specify output path for merged kubeconfig
-  -h, --help         Print help
+  -o, --output <FILE>  Specify output file path (prints to stdout if not specified)
+  -h, --help           Print help
 ```
 
 #### License
