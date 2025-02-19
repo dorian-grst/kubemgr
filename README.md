@@ -1,8 +1,20 @@
+
+<div align="center">
+
 # kubemgr
 
-The fastest way to merge Kubernetes configuration files 🏎.
+The fastest way to merge Kubernetes configuration files 🦀.
 
-Online version available at [kubemgr.com](https://kubemgr.com).
+![board](https://github.com/dorian-grst/kubemgr/blob/main/examples/demo.gif?raw=true)
+
+[![crates.io](https://img.shields.io/crates/v/kubemgr.svg)](https://crates.io/crates/kubemgr)
+[![Website](https://img.shields.io/badge/website-kubemgr.com-red)](https://kubemgr.com/)
+
+</div>
+
+### Description
+
+Kubemgr is a powerful CLI tool that simplifies merging multiple Kubernetes configuration files, ensuring seamless access and efficient cluster management.
 
 ### Pre-requisites
 
@@ -19,8 +31,6 @@ Online version available at [kubemgr.com](https://kubemgr.com).
   ```shell
   rustup update
   ```
-
-- **Kubernetes cluster access**: Ensure you have a valid Kubernetes configuration (`~/.kube/config`) if you plan to interact with clusters.
 
 ### Installation
 
